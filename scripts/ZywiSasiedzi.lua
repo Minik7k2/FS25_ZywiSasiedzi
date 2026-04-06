@@ -6,6 +6,7 @@
 -- Ładujemy moduły moda
 local modDir = g_currentModDirectory
 source(modDir .. "scripts/FieldScanner.lua")
+source(modDir .. "scripts/NeighborManager.lua")
 
 -- Zapisujemy nazwę moda podczas ładowania pliku (potem niedostępna!)
 local modName = g_currentModName
@@ -34,9 +35,15 @@ function ZywiSasiedzi:loadMap(name)
     addConsoleCommand("zsTest", "Testowa komenda moda Żywi Sąsiedzi", "consoleCommandTest", self)
     addConsoleCommand("zsStatus", "Wyświetla status moda Żywi Sąsiedzi", "consoleCommandStatus", self)
     addConsoleCommand("zsScanFields", "Skanuje pola na mapie i wyświetla raport", "consoleCommandScanFields", self)
+    addConsoleCommand("zsNeighbors", "Wyświetla raport o sąsiadach i ich polach", "consoleCommandNeighbors", self)
 
     -- Automatyczne skanowanie pól po załadowaniu mapy
     self:scanFields()
+
+    -- Inicjalizacja systemu sąsiadów — odkrywamy właścicieli pól NPC z gry
+    local npcFields = FieldScanner.getNpcFields(ZywiSasiedzi.scannedFields)
+    NeighborManager.init(npcFields)
+    NeighborManager.printReport()
 end
 
 --- Wywoływane co klatkę, dt = delta time w milisekundach
@@ -50,6 +57,7 @@ function ZywiSasiedzi:deleteMap()
     removeConsoleCommand("zsTest")
     removeConsoleCommand("zsStatus")
     removeConsoleCommand("zsScanFields")
+    removeConsoleCommand("zsNeighbors")
 
     ZywiSasiedzi.isLoaded = false
     print("[ZywiSasiedzi] Mod wyładowany. Do zobaczenia!")
@@ -97,6 +105,20 @@ function ZywiSasiedzi:consoleCommandStatus()
     print(string.format("[ZywiSasiedzi] Zeskanowane pola: %d (gracz: %d, NPC: %d)",
         #ZywiSasiedzi.scannedFields, #playerFields, #npcFields))
 
+    -- Informacje o sąsiadach
+    local neighbors = NeighborManager.getNeighbors()
+    print(string.format("[ZywiSasiedzi] Sąsiedzi: %d", #neighbors))
+    for _, n in ipairs(neighbors) do
+        print(string.format("[ZywiSasiedzi]   - %s: %d pól (%.1f ha)", n.name, #n.fields, n.totalAreaHa))
+    end
+
+    return "OK"
+end
+
+--- Komenda konsolowa: zsNeighbors
+-- Wyświetla szczegółowy raport o sąsiadach i ich polach
+function ZywiSasiedzi:consoleCommandNeighbors()
+    NeighborManager.printReport()
     return "OK"
 end
 

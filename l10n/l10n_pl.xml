@@ -7,5 +7,7 @@
         <text name="status_unloaded" text="Mod wyładowany" />
         <text name="neighbor_idle" text="Bezczynny" />
         <text name="neighbor_working" text="Pracuje" />
+        <text name="neighbor_assigned_fields" text="Przypisane pola" />
+        <text name="neighbor_no_fields" text="Brak pól" />
     </texts>
 </l10n>

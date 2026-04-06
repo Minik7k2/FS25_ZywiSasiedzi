@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!--
+    config.xml — Konfiguracja moda "Żywi Sąsiedzi"
+    Sąsiedzi są odczytywani automatycznie z gry (istniejący właściciele NPC pól)
+-->
+<zywiSasiedzi>
+    <!-- Ustawienia ogólne -->
+    <settings
+        maxConcurrentVehicles="3"
+    />
+</zywiSasiedzi>

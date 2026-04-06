@@ -7,5 +7,7 @@
         <text name="status_unloaded" text="Mod unloaded" />
         <text name="neighbor_idle" text="Idle" />
         <text name="neighbor_working" text="Working" />
+        <text name="neighbor_assigned_fields" text="Assigned fields" />
+        <text name="neighbor_no_fields" text="No fields" />
     </texts>
 </l10n>
