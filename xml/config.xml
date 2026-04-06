@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <!--
     config.xml — Konfiguracja moda "Żywi Sąsiedzi"
-    Definiuje sąsiadów (imiona) i limity
+    Sąsiedzi są odczytywani automatycznie z gry (istniejący właściciele NPC pól)
 -->
 <zywiSasiedzi>
-    <!-- Maksymalna liczba sąsiadów na mapie -->
-    <settings maxNeighbors="5" />
-
-    <!-- Lista sąsiadów — mod przypisze im pola automatycznie -->
-    <neighbors>
-        <neighbor name="Jan Kowalski" />
-        <neighbor name="Anna Nowak" />
-        <neighbor name="Piotr Wiśniewski" />
-        <neighbor name="Maria Zielińska" />
-        <neighbor name="Tomasz Lewandowski" />
-    </neighbors>
+    <!-- Ustawienia ogólne -->
+    <settings
+        maxConcurrentVehicles="3"
+    />
 </zywiSasiedzi>

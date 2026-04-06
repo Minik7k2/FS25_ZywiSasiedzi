@@ -40,9 +40,9 @@ function ZywiSasiedzi:loadMap(name)
     -- Automatyczne skanowanie pól po załadowaniu mapy
     self:scanFields()
 
-    -- Inicjalizacja systemu sąsiadów — przypisanie pól NPC
+    -- Inicjalizacja systemu sąsiadów — odkrywamy właścicieli pól NPC z gry
     local npcFields = FieldScanner.getNpcFields(ZywiSasiedzi.scannedFields)
-    NeighborManager.init(modDir, npcFields)
+    NeighborManager.init(npcFields)
     NeighborManager.printReport()
 end
 

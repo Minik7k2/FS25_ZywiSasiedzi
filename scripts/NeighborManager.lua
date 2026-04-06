@@ -1,176 +1,91 @@
 -- ============================================================================
 -- NeighborManager.lua — Zarządzanie sąsiadami i ich polami
--- Etap 3: Wirtualni sąsiedzi z imionami przypisani do pól NPC
+-- Etap 3: Sąsiedzi odczytywani z gry (istniejący właściciele NPC pól)
 -- ============================================================================
 
 NeighborManager = {}
 
--- Lista sąsiadów (wypełniana z config.xml lub domyślnie)
+-- Sąsiedzi indeksowani po farmId (klucz = farmId, wartość = dane sąsiada)
 NeighborManager.neighbors = {}
 
--- Ścieżka do pliku konfiguracyjnego
-NeighborManager.configPath = nil
+-- Lista sąsiadów jako tablica (do iteracji)
+NeighborManager.neighborList = {}
 
---- Inicjalizuje NeighborManager — ładuje config i przypisuje pola
--- @param modDir string — ścieżka do katalogu moda
+--- Inicjalizuje NeighborManager — odkrywa sąsiadów z pól NPC
 -- @param npcFields table — pola NPC z FieldScanner
-function NeighborManager.init(modDir, npcFields)
+function NeighborManager.init(npcFields)
     NeighborManager.neighbors = {}
-    NeighborManager.configPath = modDir .. "xml/config.xml"
+    NeighborManager.neighborList = {}
 
-    -- Wczytaj sąsiadów z pliku konfiguracyjnego
-    local loaded = NeighborManager.loadFromConfig()
-
-    if not loaded or #NeighborManager.neighbors == 0 then
-        print("[ZywiSasiedzi] Nie znaleziono konfiguracji sąsiadów — używam domyślnych")
-        NeighborManager.loadDefaults()
-    end
-
-    -- Przypisz pola NPC do sąsiadów
-    NeighborManager.assignFields(npcFields)
-
-    print(string.format("[ZywiSasiedzi] Zainicjalizowano %d sąsiadów", #NeighborManager.neighbors))
-end
-
---- Wczytuje listę sąsiadów z xml/config.xml
--- @return boolean — true jeśli udało się wczytać
-function NeighborManager.loadFromConfig()
-    local path = NeighborManager.configPath
-
-    if path == nil then
-        return false
-    end
-
-    -- Sprawdzamy czy plik istnieje
-    local xmlFile = XMLFile.loadIfExists("zywiSasiedziConfig", path, nil)
-    if xmlFile == nil then
-        print("[ZywiSasiedzi] Brak pliku config.xml: " .. tostring(path))
-        return false
-    end
-
-    -- Odczyt ustawień
-    local maxNeighbors = xmlFile:getInt("zywiSasiedzi.settings#maxNeighbors", 5)
-
-    -- Odczyt listy sąsiadów
-    local count = 0
-    local i = 0
-    while true do
-        local key = string.format("zywiSasiedzi.neighbors.neighbor(%d)", i)
-        local name = xmlFile:getString(key .. "#name")
-
-        if name == nil then
-            break
-        end
-
-        if count < maxNeighbors then
-            local neighbor = NeighborManager.createNeighbor(count + 1, name)
-            table.insert(NeighborManager.neighbors, neighbor)
-            count = count + 1
-        end
-
-        i = i + 1
-    end
-
-    xmlFile:delete()
-
-    print(string.format("[ZywiSasiedzi] Wczytano %d sąsiadów z config.xml (limit: %d)", count, maxNeighbors))
-    return count > 0
-end
-
---- Tworzy domyślną listę sąsiadów (fallback gdy brak config.xml)
-function NeighborManager.loadDefaults()
-    local defaultNames = {
-        "Jan Kowalski",
-        "Anna Nowak",
-        "Piotr Wiśniewski",
-        "Maria Zielińska",
-        "Tomasz Lewandowski"
-    }
-
-    for i, name in ipairs(defaultNames) do
-        local neighbor = NeighborManager.createNeighbor(i, name)
-        table.insert(NeighborManager.neighbors, neighbor)
-    end
-end
-
---- Tworzy strukturę danych pojedynczego sąsiada
--- @param id number — identyfikator sąsiada
--- @param name string — imię i nazwisko
--- @return table — dane sąsiada
-function NeighborManager.createNeighbor(id, name)
-    return {
-        id = id,
-        name = name,
-        fields = {},       -- przypisane pola (tablica fieldData z FieldScanner)
-        totalAreaHa = 0,   -- łączna powierzchnia pól w hektarach
-    }
-end
-
---- Przypisuje pola NPC do sąsiadów — round-robin, ale wyrównując powierzchnię
--- Każdy sąsiad dostaje co najmniej 1 pole (jeśli starczy)
--- @param npcFields table — pola NPC z FieldScanner.getNpcFields()
-function NeighborManager.assignFields(npcFields)
     if npcFields == nil or #npcFields == 0 then
-        print("[ZywiSasiedzi] Brak pól NPC do przypisania")
+        print("[ZywiSasiedzi] Brak pól NPC — brak sąsiadów do odkrycia")
         return
     end
 
-    if #NeighborManager.neighbors == 0 then
-        print("[ZywiSasiedzi] Brak sąsiadów — nie można przypisać pól")
-        return
-    end
+    -- Grupujemy pola po ownerFarmId — każdy unikalny farmId to jeden sąsiad
+    for _, fieldData in ipairs(npcFields) do
+        local farmId = fieldData.ownerFarmId
 
-    -- Czyścimy poprzednie przypisania
-    for _, neighbor in ipairs(NeighborManager.neighbors) do
-        neighbor.fields = {}
-        neighbor.totalAreaHa = 0
-    end
+        if farmId ~= nil and farmId > 0 then
+            local neighbor = NeighborManager.neighbors[farmId]
 
-    -- Sortujemy pola malejąco po powierzchni — duże pola najpierw
-    -- Dzięki temu lepsze wyrównanie powierzchni
-    local sortedFields = {}
-    for _, field in ipairs(npcFields) do
-        table.insert(sortedFields, field)
-    end
-    table.sort(sortedFields, function(a, b) return a.areaHa > b.areaHa end)
-
-    -- Przypisujemy każde pole sąsiadowi z najmniejszą łączną powierzchnią
-    for _, fieldData in ipairs(sortedFields) do
-        local bestNeighbor = NeighborManager.neighbors[1]
-
-        for _, neighbor in ipairs(NeighborManager.neighbors) do
-            if neighbor.totalAreaHa < bestNeighbor.totalAreaHa then
-                bestNeighbor = neighbor
+            if neighbor == nil then
+                -- Nowy sąsiad — pobieramy nazwę z gry
+                local farmName = NeighborManager.getFarmName(farmId)
+                neighbor = {
+                    farmId = farmId,
+                    name = farmName,
+                    fields = {},
+                    totalAreaHa = 0,
+                }
+                NeighborManager.neighbors[farmId] = neighbor
+                table.insert(NeighborManager.neighborList, neighbor)
             end
+
+            -- Dodajemy pole do tego sąsiada
+            table.insert(neighbor.fields, fieldData)
+            neighbor.totalAreaHa = neighbor.totalAreaHa + fieldData.areaHa
+
+            -- Oznaczamy pole — zapisujemy dane sąsiada
+            fieldData.neighborFarmId = farmId
+            fieldData.neighborName = neighbor.name
         end
-
-        -- Dodajemy pole do sąsiada
-        table.insert(bestNeighbor.fields, fieldData)
-        bestNeighbor.totalAreaHa = bestNeighbor.totalAreaHa + fieldData.areaHa
-
-        -- Oznaczamy pole — zapisujemy id sąsiada w danych pola
-        fieldData.neighborId = bestNeighbor.id
-        fieldData.neighborName = bestNeighbor.name
     end
+
+    -- Sortujemy listę sąsiadów po farmId dla czytelności
+    table.sort(NeighborManager.neighborList, function(a, b) return a.farmId < b.farmId end)
+
+    print(string.format("[ZywiSasiedzi] Odkryto %d sąsiadów z istniejących farm NPC",
+        #NeighborManager.neighborList))
 end
 
---- Zwraca sąsiada po ID
--- @param id number — identyfikator sąsiada
--- @return table|nil — dane sąsiada lub nil
-function NeighborManager.getNeighborById(id)
-    for _, neighbor in ipairs(NeighborManager.neighbors) do
-        if neighbor.id == id then
-            return neighbor
+--- Pobiera nazwę farmy z gry po farmId
+-- @param farmId number — identyfikator farmy
+-- @return string — nazwa farmy/właściciela
+function NeighborManager.getFarmName(farmId)
+    if g_farmManager ~= nil then
+        local farm = g_farmManager:getFarmById(farmId)
+        if farm ~= nil and farm.name ~= nil then
+            return farm.name
         end
     end
-    return nil
+
+    -- Fallback gdy nie udało się pobrać nazwy
+    return string.format("Farma #%d", farmId)
+end
+
+--- Zwraca sąsiada po farmId
+-- @param farmId number — identyfikator farmy
+-- @return table|nil — dane sąsiada lub nil
+function NeighborManager.getNeighborByFarmId(farmId)
+    return NeighborManager.neighbors[farmId]
 end
 
 --- Zwraca sąsiada przypisanego do danego pola
 -- @param fieldId number — ID pola
 -- @return table|nil — dane sąsiada lub nil
 function NeighborManager.getNeighborByFieldId(fieldId)
-    for _, neighbor in ipairs(NeighborManager.neighbors) do
+    for _, neighbor in ipairs(NeighborManager.neighborList) do
         for _, field in ipairs(neighbor.fields) do
             if field.fieldId == fieldId then
                 return neighbor
@@ -183,7 +98,7 @@ end
 --- Zwraca listę wszystkich sąsiadów
 -- @return table — lista sąsiadów
 function NeighborManager.getNeighbors()
-    return NeighborManager.neighbors
+    return NeighborManager.neighborList
 end
 
 --- Wypisuje raport o sąsiadach do konsoli
@@ -191,10 +106,10 @@ function NeighborManager.printReport()
     print("[ZywiSasiedzi] ==========================================")
     print("[ZywiSasiedzi]       RAPORT SĄSIADÓW")
     print("[ZywiSasiedzi] ==========================================")
-    print(string.format("[ZywiSasiedzi] Liczba sąsiadów: %d", #NeighborManager.neighbors))
+    print(string.format("[ZywiSasiedzi] Liczba sąsiadów: %d", #NeighborManager.neighborList))
     print("[ZywiSasiedzi] ------------------------------------------")
 
-    for _, neighbor in ipairs(NeighborManager.neighbors) do
+    for _, neighbor in ipairs(NeighborManager.neighborList) do
         -- Zbieramy numery pól
         local fieldIds = {}
         for _, field in ipairs(neighbor.fields) do
@@ -204,9 +119,9 @@ function NeighborManager.printReport()
         local fieldListStr = #fieldIds > 0 and table.concat(fieldIds, ", ") or "brak"
 
         print(string.format(
-            "[ZywiSasiedzi] Sąsiad #%d: %s | Pola: [%s] | Łącznie: %.1f ha",
-            neighbor.id,
+            "[ZywiSasiedzi] %s (farmId: %d) | Pola: [%s] | Łącznie: %.1f ha",
             neighbor.name,
+            neighbor.farmId,
             fieldListStr,
             neighbor.totalAreaHa
         ))
