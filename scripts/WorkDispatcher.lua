@@ -199,9 +199,10 @@ function WorkDispatcher.loadVehicle(xmlFilename, x, z, farmId, spawnRecord, call
     print(string.format("[ZywiSasiedzi] Ładuję pojazd: %s", xmlFilename))
 
     -- Rozpocznij asynchroniczne ładowanie
+    -- Sygnatura callbacka VehicleLoadingData: (_, vehicles, loadingState, args)
+    -- Pierwszy parametr to self/nil, drugi to tablica pojazdów
     loadingData:load(
-        function(vehicles, vehicleLoadState, args)
-            -- Callback po załadowaniu
+        function(_, vehicles, vehicleLoadState, args)
             WorkDispatcher[callbackName](vehicles, vehicleLoadState, args)
         end,
         nil,
@@ -210,11 +211,11 @@ function WorkDispatcher.loadVehicle(xmlFilename, x, z, farmId, spawnRecord, call
 end
 
 --- Callback po załadowaniu traktora
--- VehicleLoadingData callback: (vehicle, loadingState, args)
--- @param vehicle table — załadowany pojazd
+-- VehicleLoadingData callback: (_, vehicles, loadingState, args)
+-- @param vehicles table — tablica załadowanych pojazdów
 -- @param loadingState number — stan ładowania (VehicleLoadingState)
 -- @param spawnRecord table — rekord spawnu
-function WorkDispatcher.onTractorLoaded(vehicle, loadingState, spawnRecord)
+function WorkDispatcher.onTractorLoaded(vehicles, loadingState, spawnRecord)
     -- Sprawdź stan ładowania
     if VehicleLoadingState ~= nil and loadingState ~= VehicleLoadingState.OK then
         print(string.format("[ZywiSasiedzi] BŁĄD ładowania traktora (stan: %s)",
@@ -223,7 +224,8 @@ function WorkDispatcher.onTractorLoaded(vehicle, loadingState, spawnRecord)
         return
     end
 
-    local tractor = vehicle
+    -- Pobierz pierwszy pojazd z tablicy
+    local tractor = vehicles and vehicles[1] or nil
 
     if tractor == nil then
         print("[ZywiSasiedzi] BŁĄD: traktor nie został załadowany (nil)")
@@ -259,11 +261,11 @@ function WorkDispatcher.onTractorLoaded(vehicle, loadingState, spawnRecord)
 end
 
 --- Callback po załadowaniu narzędzia
--- VehicleLoadingData callback: (vehicle, loadingState, args)
--- @param vehicle table — załadowany pojazd
+-- VehicleLoadingData callback: (_, vehicles, loadingState, args)
+-- @param vehicles table — tablica załadowanych pojazdów
 -- @param loadingState number — stan ładowania (VehicleLoadingState)
 -- @param spawnRecord table — rekord spawnu
-function WorkDispatcher.onImplementLoaded(vehicle, loadingState, spawnRecord)
+function WorkDispatcher.onImplementLoaded(vehicles, loadingState, spawnRecord)
     -- Sprawdź stan ładowania
     if VehicleLoadingState ~= nil and loadingState ~= VehicleLoadingState.OK then
         print(string.format("[ZywiSasiedzi] BŁĄD ładowania narzędzia (stan: %s)",
@@ -273,7 +275,8 @@ function WorkDispatcher.onImplementLoaded(vehicle, loadingState, spawnRecord)
         return
     end
 
-    local implement = vehicle
+    -- Pobierz pierwszy pojazd z tablicy
+    local implement = vehicles and vehicles[1] or nil
 
     if implement == nil then
         print("[ZywiSasiedzi] OSTRZEŻENIE: narzędzie nie załadowane, kontynuuję bez")
