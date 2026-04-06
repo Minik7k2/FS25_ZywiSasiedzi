@@ -8,4 +8,28 @@
     <settings
         maxConcurrentVehicles="3"
     />
+
+    <!--
+        Zestawy pojazdów do spawnowania na polach sąsiadów.
+        tractorXML: ścieżka do XML traktora (base game lub mod)
+        implementXML: ścieżka do XML narzędzia (opcjonalne)
+
+        WSKAZÓWKA: Użyj komendy zsStore w konsoli gry (~) żeby zobaczyć
+        dostępne pojazdy i ich ścieżki XML.
+    -->
+    <vehicleSets>
+        <!-- Zestaw do uprawy (traktor + kultywator) -->
+        <vehicleSet
+            name="Uprawa"
+            tractorXML="data/vehicles/fendt/vario300/vario300.xml"
+            implementXML="data/vehicles/kuhn/cultimer300/cultimer300.xml"
+        />
+
+        <!-- Zestaw do siewu (traktor + siewnik) -->
+        <vehicleSet
+            name="Siew"
+            tractorXML="data/vehicles/fendt/vario300/vario300.xml"
+            implementXML="data/vehicles/poettinger/vitasem302A/vitasem302A.xml"
+        />
+    </vehicleSets>
 </zywiSasiedzi>
