@@ -185,9 +185,9 @@ function WorkDispatcher.loadVehicle(xmlFilename, x, z, farmId, spawnRecord, call
     -- Dodaj do fizyki (żeby pojazd był widoczny i interaktywny)
     loadingData:setAddToPhysics(true)
 
-    -- Stan własności: OWNED (żeby sąsiad "posiadał" pojazd)
+    -- Stan własności: MISSION = pojazd tymczasowy, nie zapisywany w savegame
     if VehiclePropertyState ~= nil then
-        loadingData:setPropertyState(VehiclePropertyState.OWNED)
+        loadingData:setPropertyState(VehiclePropertyState.MISSION)
     end
 
     -- Przypisz do farmy sąsiada
@@ -210,27 +210,20 @@ function WorkDispatcher.loadVehicle(xmlFilename, x, z, farmId, spawnRecord, call
 end
 
 --- Callback po załadowaniu traktora
--- @param vehicles table — załadowane pojazdy
--- @param vehicleLoadState number — stan ładowania
+-- VehicleLoadingData callback: (vehicle, loadingState, args)
+-- @param vehicle table — załadowany pojazd
+-- @param loadingState number — stan ładowania (VehicleLoadingState)
 -- @param spawnRecord table — rekord spawnu
-function WorkDispatcher.onTractorLoaded(vehicles, vehicleLoadState, spawnRecord)
+function WorkDispatcher.onTractorLoaded(vehicle, loadingState, spawnRecord)
     -- Sprawdź stan ładowania
-    if VehicleLoadingUtil ~= nil and vehicleLoadState ~= VehicleLoadingUtil.VEHICLE_LOAD_OK then
+    if VehicleLoadingState ~= nil and loadingState ~= VehicleLoadingState.OK then
         print(string.format("[ZywiSasiedzi] BŁĄD ładowania traktora (stan: %s)",
-            tostring(vehicleLoadState)))
+            tostring(loadingState)))
         WorkDispatcher.removeSpawnRecord(spawnRecord)
         return
     end
 
-    -- Pobierz załadowany pojazd (pierwszy z listy)
-    local tractor = nil
-    if vehicles ~= nil then
-        if type(vehicles) == "table" then
-            tractor = vehicles[1] or vehicles
-        else
-            tractor = vehicles
-        end
-    end
+    local tractor = vehicle
 
     if tractor == nil then
         print("[ZywiSasiedzi] BŁĄD: traktor nie został załadowany (nil)")
@@ -266,28 +259,21 @@ function WorkDispatcher.onTractorLoaded(vehicles, vehicleLoadState, spawnRecord)
 end
 
 --- Callback po załadowaniu narzędzia
--- @param vehicles table — załadowane pojazdy
--- @param vehicleLoadState number — stan ładowania
+-- VehicleLoadingData callback: (vehicle, loadingState, args)
+-- @param vehicle table — załadowany pojazd
+-- @param loadingState number — stan ładowania (VehicleLoadingState)
 -- @param spawnRecord table — rekord spawnu
-function WorkDispatcher.onImplementLoaded(vehicles, vehicleLoadState, spawnRecord)
+function WorkDispatcher.onImplementLoaded(vehicle, loadingState, spawnRecord)
     -- Sprawdź stan ładowania
-    if VehicleLoadingUtil ~= nil and vehicleLoadState ~= VehicleLoadingUtil.VEHICLE_LOAD_OK then
+    if VehicleLoadingState ~= nil and loadingState ~= VehicleLoadingState.OK then
         print(string.format("[ZywiSasiedzi] BŁĄD ładowania narzędzia (stan: %s)",
-            tostring(vehicleLoadState)))
+            tostring(loadingState)))
         -- Traktor został załadowany, ale narzędzie nie — kontynuuj bez narzędzia
         spawnRecord.state = "ready"
         return
     end
 
-    -- Pobierz załadowane narzędzie
-    local implement = nil
-    if vehicles ~= nil then
-        if type(vehicles) == "table" then
-            implement = vehicles[1] or vehicles
-        else
-            implement = vehicles
-        end
-    end
+    local implement = vehicle
 
     if implement == nil then
         print("[ZywiSasiedzi] OSTRZEŻENIE: narzędzie nie załadowane, kontynuuję bez")
@@ -374,8 +360,8 @@ function WorkDispatcher.attachImplementToTractor(spawnRecord)
     end
 
     -- Podepnij narzędzie do traktora
-    -- attachImplement(object, inputJointDescIndex, jointDescIndex, skipTrigger,
-    --                 implementIndex, moveDown, loadFromSavegame, loadedFromSavegame)
+    -- attachImplement(object, inputJointDescIndex, jointDescIndex, noEventSend,
+    --                 position, moveDown, loadFromSavegame, isReloading)
     local success = pcall(function()
         tractor:attachImplement(implement, bestInputIndex, bestJointIndex, true, nil, true, false, false)
     end)
@@ -450,11 +436,11 @@ function WorkDispatcher.cleanupRecord(record)
         end)
     end
 
-    -- Usuń narzędzie
+    -- Usuń narzędzie (vehicle:delete() — oficjalny wzorzec FS25)
     if record.implement ~= nil then
         pcall(function()
             if not record.implement.isDeleted then
-                g_currentMission.vehicleSystem:removeVehicle(record.implement)
+                record.implement:delete()
             end
         end)
         record.implement = nil
@@ -464,7 +450,7 @@ function WorkDispatcher.cleanupRecord(record)
     if record.tractor ~= nil then
         pcall(function()
             if not record.tractor.isDeleted then
-                g_currentMission.vehicleSystem:removeVehicle(record.tractor)
+                record.tractor:delete()
             end
         end)
         record.tractor = nil
