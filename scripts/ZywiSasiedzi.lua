@@ -3,6 +3,10 @@
 -- Odpowiada za inicjalizację, pętlę update i cleanup
 -- ============================================================================
 
+-- Ładujemy moduły moda
+local modDir = g_currentModDirectory
+source(modDir .. "scripts/FieldScanner.lua")
+
 -- Zapisujemy nazwę moda podczas ładowania pliku (potem niedostępna!)
 local modName = g_currentModName
 
@@ -10,6 +14,9 @@ ZywiSasiedzi = {}
 
 -- Flaga informująca czy mod jest załadowany
 ZywiSasiedzi.isLoaded = false
+
+-- Wyniki ostatniego skanowania pól
+ZywiSasiedzi.scannedFields = {}
 
 --- Wywoływane przy ładowaniu mapy
 function ZywiSasiedzi:loadMap(name)
@@ -26,6 +33,10 @@ function ZywiSasiedzi:loadMap(name)
     -- Użyj klawisza ~ w grze, wpisz komendę
     addConsoleCommand("zsTest", "Testowa komenda moda Żywi Sąsiedzi", "consoleCommandTest", self)
     addConsoleCommand("zsStatus", "Wyświetla status moda Żywi Sąsiedzi", "consoleCommandStatus", self)
+    addConsoleCommand("zsScanFields", "Skanuje pola na mapie i wyświetla raport", "consoleCommandScanFields", self)
+
+    -- Automatyczne skanowanie pól po załadowaniu mapy
+    self:scanFields()
 end
 
 --- Wywoływane co klatkę, dt = delta time w milisekundach
@@ -38,6 +49,7 @@ function ZywiSasiedzi:deleteMap()
     -- Usuwamy komendy konsolowe
     removeConsoleCommand("zsTest")
     removeConsoleCommand("zsStatus")
+    removeConsoleCommand("zsScanFields")
 
     ZywiSasiedzi.isLoaded = false
     print("[ZywiSasiedzi] Mod wyładowany. Do zobaczenia!")
@@ -48,6 +60,21 @@ end
 function ZywiSasiedzi:consoleCommandTest()
     print("[ZywiSasiedzi] Komenda testowa działa!")
     print("[ZywiSasiedzi] g_currentMission istnieje: " .. tostring(g_currentMission ~= nil))
+    return "OK"
+end
+
+--- Skanuje pola i zapisuje wynik
+function ZywiSasiedzi:scanFields()
+    print("[ZywiSasiedzi] Rozpoczynam skanowanie pól...")
+    ZywiSasiedzi.scannedFields = FieldScanner.scanAllFields()
+    FieldScanner.printReport(ZywiSasiedzi.scannedFields)
+    return ZywiSasiedzi.scannedFields
+end
+
+--- Komenda konsolowa: zsScanFields
+-- Ponowne skanowanie pól na żądanie
+function ZywiSasiedzi:consoleCommandScanFields()
+    self:scanFields()
     return "OK"
 end
 
@@ -63,6 +90,12 @@ function ZywiSasiedzi:consoleCommandStatus()
     else
         print("[ZywiSasiedzi] Misja aktywna: NIE")
     end
+
+    -- Informacje o zeskanowanych polach
+    local npcFields = FieldScanner.getNpcFields(ZywiSasiedzi.scannedFields)
+    local playerFields = FieldScanner.getPlayerFields(ZywiSasiedzi.scannedFields)
+    print(string.format("[ZywiSasiedzi] Zeskanowane pola: %d (gracz: %d, NPC: %d)",
+        #ZywiSasiedzi.scannedFields, #playerFields, #npcFields))
 
     return "OK"
 end
