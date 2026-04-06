@@ -15,5 +15,6 @@
     <extraSourceFiles>
         <sourceFile filename="scripts/ZywiSasiedzi.lua"/>
     </extraSourceFiles>
+    <!-- FieldScanner.lua ładowany przez source() w ZywiSasiedzi.lua -->
     <l10n filenamePrefix="l10n/l10n" />
 </modDesc>
