@@ -39,7 +39,7 @@ Edytuj `Dokumenty/My Games/FarmingSimulator2025/game.xml`:
 ## Status
 
 - [x] Etap 1: Szkielet moda
-- [ ] Etap 2: Skanowanie pól
+- [x] Etap 2: Skanowanie pól
 - [ ] Etap 3: System sąsiadów
 - [ ] Etap 4: Spawnowanie maszyn
 - [ ] Etap 5: AI Worker
