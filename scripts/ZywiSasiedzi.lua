@@ -49,12 +49,9 @@ function ZywiSasiedzi:loadMap(name)
     addConsoleCommand("zsVehicles", "Wyświetla status aktywnych pojazdów", "consoleCommandVehicles", self)
     addConsoleCommand("zsStore", "Listuje pojazdy dostępne w sklepie (do sprawdzania XML)", "consoleCommandStore", self)
 
-    -- Inicjalizacja systemu spawnowania pojazdów (tylko config, bez skanowania)
-    WorkDispatcher.init()
-
-    -- UWAGA: Skanowanie pól i inicjalizację sąsiadów odkładamy do pierwszego update(),
-    -- bo w loadMap() systemy gry (fieldManager, density maps) mogą nie być jeszcze gotowe,
-    -- co powoduje zawieszenie ładowania mapy.
+    -- UWAGA: Całą inicjalizację (config, skanowanie pól, sąsiedzi) odkładamy
+    -- do pierwszego update(), bo w loadMap() systemy gry mogą nie być jeszcze gotowe,
+    -- a synchroniczne loadXMLFile() blokuje ładowanie mapy (freeze na 57%).
 end
 
 --- Wywoływane co klatkę, dt = delta time w milisekundach
@@ -66,7 +63,12 @@ function ZywiSasiedzi:update(dt)
             return
         end
 
-        print("[ZywiSasiedzi] Mapa załadowana — rozpoczynam skanowanie pól...")
+        print("[ZywiSasiedzi] Mapa załadowana — rozpoczynam inicjalizację...")
+
+        -- Inicjalizacja systemu spawnowania (wczytanie config.xml)
+        WorkDispatcher.init()
+
+        -- Skanowanie pól
         self:scanFields()
 
         -- Inicjalizacja systemu sąsiadów
