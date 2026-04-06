@@ -26,8 +26,8 @@ function FieldScanner.scanAllFields()
 
     local results = {}
 
-    for _, field in pairs(fields) do
-        local fieldData = FieldScanner.scanField(field)
+    for fieldIndex, field in pairs(fields) do
+        local fieldData = FieldScanner.scanField(field, fieldIndex)
         if fieldData ~= nil then
             table.insert(results, fieldData)
         end
@@ -42,7 +42,7 @@ end
 --- Skanuje pojedyncze pole i zwraca jego dane
 -- @param field — obiekt pola z g_fieldManager
 -- @return table|nil — dane pola lub nil jeśli błąd
-function FieldScanner.scanField(field)
+function FieldScanner.scanField(field, fieldIndex)
     if field == nil then
         return nil
     end
@@ -50,7 +50,8 @@ function FieldScanner.scanField(field)
     local fieldData = {}
 
     -- Podstawowe informacje o polu
-    fieldData.fieldId = field.fieldId or 0
+    -- W FS25 obiekt pola nie ma property fieldId — ID to klucz w tablicy z getFields()
+    fieldData.fieldId = fieldIndex or field.fieldId or 0
     fieldData.posX = field.posX or 0
     fieldData.posZ = field.posZ or 0
 
