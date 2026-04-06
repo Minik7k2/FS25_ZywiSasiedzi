@@ -17,6 +17,9 @@ ZywiSasiedzi = {}
 -- Flaga informująca czy mod jest załadowany
 ZywiSasiedzi.isLoaded = false
 
+-- Flaga: czy inicjalizacja po załadowaniu mapy została wykonana
+ZywiSasiedzi.isInitialized = false
+
 -- Katalog moda (do wczytywania konfiguracji)
 ZywiSasiedzi.modDir = modDir
 
@@ -32,6 +35,7 @@ function ZywiSasiedzi:loadMap(name)
     print("[ZywiSasiedzi] ======================================")
 
     ZywiSasiedzi.isLoaded = true
+    ZywiSasiedzi.isInitialized = false
     ZywiSasiedzi.modName = modName
 
     -- Rejestracja komend konsolowych do testowania
@@ -45,21 +49,28 @@ function ZywiSasiedzi:loadMap(name)
     addConsoleCommand("zsVehicles", "Wyświetla status aktywnych pojazdów", "consoleCommandVehicles", self)
     addConsoleCommand("zsStore", "Listuje pojazdy dostępne w sklepie (do sprawdzania XML)", "consoleCommandStore", self)
 
-    -- Automatyczne skanowanie pól po załadowaniu mapy
-    self:scanFields()
-
-    -- Inicjalizacja systemu sąsiadów — odkrywamy właścicieli pól NPC z gry
-    local npcFields = FieldScanner.getNpcFields(ZywiSasiedzi.scannedFields)
-    NeighborManager.init(npcFields)
-    NeighborManager.printReport()
-
-    -- Inicjalizacja systemu spawnowania pojazdów
+    -- Inicjalizacja systemu spawnowania pojazdów (tylko config, bez skanowania)
     WorkDispatcher.init()
+
+    -- UWAGA: Skanowanie pól i inicjalizację sąsiadów odkładamy do pierwszego update(),
+    -- bo w loadMap() systemy gry (fieldManager, density maps) mogą nie być jeszcze gotowe,
+    -- co powoduje zawieszenie ładowania mapy.
 end
 
 --- Wywoływane co klatkę, dt = delta time w milisekundach
 function ZywiSasiedzi:update(dt)
-    -- Na razie puste — tu będzie logika dispatching prac sąsiadów
+    -- Odroczona inicjalizacja — skanowanie pól i sąsiadów po pełnym załadowaniu mapy
+    if not ZywiSasiedzi.isInitialized then
+        ZywiSasiedzi.isInitialized = true
+
+        print("[ZywiSasiedzi] Mapa załadowana — rozpoczynam skanowanie pól...")
+        self:scanFields()
+
+        -- Inicjalizacja systemu sąsiadów
+        local npcFields = FieldScanner.getNpcFields(ZywiSasiedzi.scannedFields)
+        NeighborManager.init(npcFields)
+        NeighborManager.printReport()
+    end
 end
 
 --- Wywoływane przy zamykaniu mapy — sprzątamy zasoby
