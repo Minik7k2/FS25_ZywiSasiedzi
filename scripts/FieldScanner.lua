@@ -70,16 +70,26 @@ function FieldScanner.scanField(field)
     if farmland ~= nil then
         fieldData.farmlandId = farmland.id or 0
 
-        -- Sprawdzamy kto jest właścicielem
-        if farmland.isOwned ~= nil and farmland.isOwned then
-            fieldData.isPlayerOwned = true
-            fieldData.isNpcOwned = false
-        end
-
-        -- Pobieramy farmId właściciela
+        -- Pobieramy farmId właściciela (0 = niczyje pole)
         if g_farmlandManager.getFarmlandOwner ~= nil then
             fieldData.ownerFarmId = g_farmlandManager:getFarmlandOwner(farmland.id) or 0
         end
+
+        -- Sprawdzamy czy pole należy do gracza (farmId 1 = gracz w FS25)
+        -- Pole jest gracza gdy ma właściciela z farmId > 0 (kupione przez jakąś farmę)
+        if fieldData.ownerFarmId > 0 then
+            -- Sprawdzamy czy to farma gracza
+            local playerFarmId = 1 -- domyślne farmId gracza w FS25
+            if g_currentMission ~= nil and g_currentMission.player ~= nil and g_currentMission.player.farmId ~= nil then
+                playerFarmId = g_currentMission.player.farmId
+            end
+
+            if fieldData.ownerFarmId == playerFarmId then
+                fieldData.isPlayerOwned = true
+                fieldData.isNpcOwned = false
+            end
+        end
+        -- Jeśli ownerFarmId == 0, pole jest niczyje — traktujemy jako NPC
 
         -- Cena pola
         fieldData.price = farmland.price or 0
