@@ -236,8 +236,12 @@ function WorkDispatcher.onTractorLoaded(vehicles, loadingState, spawnRecord)
     spawnRecord.tractor = tractor
     spawnRecord.state = "loading_implement"
 
+    local tractorName = "?"
+    if tractor.getFullName ~= nil then
+        tractorName = tractor:getFullName()
+    end
     print(string.format("[ZywiSasiedzi] Traktor załadowany na polu #%d: %s",
-        spawnRecord.fieldId, tostring(tractor:getFullName and tractor:getFullName() or "?")))
+        spawnRecord.fieldId, tostring(tractorName)))
 
     -- Jeśli zestaw ma narzędzie, ładujemy je obok traktora
     if spawnRecord.vehicleSet.implementXML ~= nil then
@@ -287,8 +291,12 @@ function WorkDispatcher.onImplementLoaded(vehicles, loadingState, spawnRecord)
     spawnRecord.implement = implement
     spawnRecord.state = "attaching"
 
+    local implName = "?"
+    if implement.getFullName ~= nil then
+        implName = implement:getFullName()
+    end
     print(string.format("[ZywiSasiedzi] Narzędzie załadowane na polu #%d: %s",
-        spawnRecord.fieldId, tostring(implement:getFullName and implement:getFullName() or "?")))
+        spawnRecord.fieldId, tostring(implName)))
 
     -- Podepnij narzędzie do traktora
     WorkDispatcher.attachImplementToTractor(spawnRecord)
