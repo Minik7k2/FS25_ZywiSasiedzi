@@ -9,6 +9,17 @@ source(modDir .. "scripts/FieldScanner.lua")
 source(modDir .. "scripts/NeighborManager.lua")
 source(modDir .. "scripts/WorkDispatcher.lua")
 
+-- Weryfikacja czy moduły załadowały się prawidłowo
+if FieldScanner == nil then
+    print("[ZywiSasiedzi] BŁĄD KRYTYCZNY: FieldScanner nie załadowany! Ścieżka: " .. tostring(modDir) .. "scripts/FieldScanner.lua")
+end
+if NeighborManager == nil then
+    print("[ZywiSasiedzi] BŁĄD KRYTYCZNY: NeighborManager nie załadowany! Ścieżka: " .. tostring(modDir) .. "scripts/NeighborManager.lua")
+end
+if WorkDispatcher == nil then
+    print("[ZywiSasiedzi] BŁĄD KRYTYCZNY: WorkDispatcher nie załadowany! Ścieżka: " .. tostring(modDir) .. "scripts/WorkDispatcher.lua")
+end
+
 -- Zapisujemy nazwę moda podczas ładowania pliku (potem niedostępna!)
 local modName = g_currentModName
 
@@ -65,6 +76,17 @@ function ZywiSasiedzi:update(dt)
 
         print("[ZywiSasiedzi] Mapa załadowana — rozpoczynam inicjalizację...")
 
+        -- Sprawdź czy moduły są dostępne (mogły się nie załadować przez source())
+        if WorkDispatcher == nil or FieldScanner == nil or NeighborManager == nil then
+            print("[ZywiSasiedzi] BŁĄD KRYTYCZNY: Moduły nie załadowane!")
+            print("[ZywiSasiedzi]   WorkDispatcher: " .. tostring(WorkDispatcher))
+            print("[ZywiSasiedzi]   FieldScanner: " .. tostring(FieldScanner))
+            print("[ZywiSasiedzi]   NeighborManager: " .. tostring(NeighborManager))
+            print("[ZywiSasiedzi]   modDir: " .. tostring(ZywiSasiedzi.modDir))
+            ZywiSasiedzi.isInitialized = true -- nie próbuj ponownie
+            return
+        end
+
         -- Inicjalizacja systemu spawnowania (wczytanie config.xml)
         WorkDispatcher.init()
 
@@ -84,7 +106,9 @@ end
 --- Wywoływane przy zamykaniu mapy — sprzątamy zasoby
 function ZywiSasiedzi:deleteMap()
     -- Despawnuj wszystkie pojazdy sąsiadów
-    WorkDispatcher.despawnAll()
+    if WorkDispatcher ~= nil then
+        WorkDispatcher.despawnAll()
+    end
 
     -- Usuwamy komendy konsolowe
     removeConsoleCommand("zsTest")
