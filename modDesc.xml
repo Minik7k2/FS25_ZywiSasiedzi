@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<modDesc descVersion="96">
+    <author>ZywiSasiedzi Team</author>
+    <version>0.1.0.0</version>
+    <multiplayer supported="true" />
+    <title>
+        <en>Living Neighbors</en>
+        <pl>Żywi Sąsiedzi</pl>
+    </title>
+    <description>
+        <en>AI neighbors working on their fields</en>
+        <pl>Sąsiedzi-farmerzy pracujący maszynami na swoich polach</pl>
+    </description>
+    <iconFilename>icon.dds</iconFilename>
+    <extraSourceFiles>
+        <sourceFile filename="scripts/ZywiSasiedzi.lua"/>
+    </extraSourceFiles>
+    <l10n filenamePrefix="l10n/l10n" />
+</modDesc>

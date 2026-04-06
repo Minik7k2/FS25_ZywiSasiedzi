@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<l10n>
+    <texts>
+        <text name="mod_title" text="Living Neighbors" />
+        <text name="mod_description" text="AI neighbors working on their fields" />
+        <text name="status_loaded" text="Mod loaded" />
+        <text name="status_unloaded" text="Mod unloaded" />
+        <text name="neighbor_idle" text="Idle" />
+        <text name="neighbor_working" text="Working" />
+    </texts>
+</l10n>

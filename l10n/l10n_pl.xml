@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<l10n>
+    <texts>
+        <text name="mod_title" text="Żywi Sąsiedzi" />
+        <text name="mod_description" text="Sąsiedzi-farmerzy pracujący maszynami na swoich polach" />
+        <text name="status_loaded" text="Mod załadowany" />
+        <text name="status_unloaded" text="Mod wyładowany" />
+        <text name="neighbor_idle" text="Bezczynny" />
+        <text name="neighbor_working" text="Pracuje" />
+    </texts>
+</l10n>
