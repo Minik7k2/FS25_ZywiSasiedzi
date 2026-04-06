@@ -60,8 +60,11 @@ end
 --- Wywoływane co klatkę, dt = delta time w milisekundach
 function ZywiSasiedzi:update(dt)
     -- Odroczona inicjalizacja — skanowanie pól i sąsiadów po pełnym załadowaniu mapy
+    -- Ponawiamy próbę co klatkę, aż systemy gry będą gotowe
     if not ZywiSasiedzi.isInitialized then
-        ZywiSasiedzi.isInitialized = true
+        if g_fieldManager == nil or g_farmlandManager == nil then
+            return
+        end
 
         print("[ZywiSasiedzi] Mapa załadowana — rozpoczynam skanowanie pól...")
         self:scanFields()
@@ -70,6 +73,9 @@ function ZywiSasiedzi:update(dt)
         local npcFields = FieldScanner.getNpcFields(ZywiSasiedzi.scannedFields)
         NeighborManager.init(npcFields)
         NeighborManager.printReport()
+
+        -- Ustawiamy flagę dopiero po udanej inicjalizacji
+        ZywiSasiedzi.isInitialized = true
     end
 end
 
